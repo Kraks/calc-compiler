@@ -1,2 +1,0 @@
-# expected result: ERROR
-(+ - -1000 -1000)
