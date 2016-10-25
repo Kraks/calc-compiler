@@ -183,11 +183,12 @@ static std::unique_ptr<ExprAST> ParseSExpr() {
   }
 
   if (CurTok == OP) {
+    OpType thisOp = Op;
     getNextToken(); //eat op
     auto lhs = ParseExpression();
     auto rhs = ParseExpression();
     if (lhs && rhs) {
-      return std::make_unique<BinaryOpExprAST>(Op, std::move(lhs), std::move(rhs));
+      return std::make_unique<BinaryOpExprAST>(thisOp, std::move(lhs), std::move(rhs));
     }
   }
 
