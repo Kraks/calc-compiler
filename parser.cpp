@@ -281,7 +281,7 @@ static std::unique_ptr<ExprAST> ParseExpression() {
   return nullptr;
 }
 
-static std::unique_ptr<ExprAST> parse() {
+static std::unique_ptr<ExprAST> Parse() {
   getNextToken();
   auto E = ParseExpression();
   if (E) {
@@ -292,10 +292,11 @@ static std::unique_ptr<ExprAST> parse() {
   return nullptr;
 }
 
-int main(int argc, char** argv) {
-  std::unique_ptr<ExprAST> e = std::move(parse());
+static void TestParser() {
+  std::unique_ptr<ExprAST> e = std::move(Parse());
   if (e) {
     std::cout << "get: ";
     e->write(std::cout);
   }
 }
+
