@@ -80,8 +80,39 @@ Value* BoolExprAST::codegen() {
 }
 
 Value* IfExprAST::codegen() {
-  //TODO
-  return ConstantInt::get(C, APInt(64, 0));
+  Value* CndValue = cnd->codegen();
+  if (!CndValue)
+    return nullptr;
+  
+  Function* TheFunction = Builder.GetInsertBlock()->getParent();
+  BasicBlock* ThenBB = BasicBlock::Create(C, "then", TheFunction);
+  BasicBlock* ElseBB = BasicBlock::Create(C, "else");
+  BasicBlock* MergBB = BasicBlock::Create(C, "ifcont");
+
+  Builder.CreateCondBr(CndValue, ThenBB, ElseBB);
+
+  Builder.SetInsertPoint(ThenBB);
+  Value* ThnValue = thn->codegen();
+  if (!ThnValue)
+    return nullptr;
+  Builder.CreateBr(MergBB);
+  ThenBB = Builder.GetInsertBlock();
+
+  TheFunction->getBasicBlockList().push_back(ElseBB);
+  Builder.SetInsertPoint(ElseBB);
+  Value* ElsValue = els->codegen();
+  if (!ElsValue)
+    return nullptr;
+  Builder.CreateBr(MergBB);
+  ElseBB = Builder.GetInsertBlock();
+  
+  TheFunction->getBasicBlockList().push_back(MergBB);
+  Builder.SetInsertPoint(MergBB);
+  PHINode* PN = Builder.CreatePHI(Type::getInt64Ty(C), 2, "iftmp");
+  PN->addIncoming(ThnValue, ThenBB);
+  PN->addIncoming(ElsValue, ElseBB);
+  
+  return PN;
 }
 
 static int compile() {
