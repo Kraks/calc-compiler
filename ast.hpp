@@ -17,7 +17,7 @@
 using namespace llvm;
 
 enum OpType {
-  plus, minus, mult, division, mod,
+  plus=1, minus, mult, division, mod,
   gt, ge, lt, le, eq, neq, unknown
 };
 
@@ -53,7 +53,6 @@ public:
   Value* codegen() override;
   void write(std::ostream& os) override;
 };
-
 
 class BoolExprAST : public ExprAST {
   bool val;

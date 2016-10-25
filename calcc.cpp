@@ -21,32 +21,6 @@ static IRBuilder<NoFolder> Builder(C);
 static std::unique_ptr<Module> M = llvm::make_unique<Module>("calc", C);
 static std::map<int, Value*> NamedValues;
 
-void ArgExprAST::write(std::ostream& os) {
-  os << "a" << n;
-}
-void IntExprAST::write(std::ostream& os) {
-  os << val;
-}
-void BinaryOpExprAST::write(std::ostream& os) {
-  os << "(" << op << " ";
-  lhs->write(os);
-  os << " ";
-  rhs->write(os);
-  os << ")";
-}
-void BoolExprAST::write(std::ostream& os) {
-  os << val;
-}
-void IfExprAST::write(std::ostream& os) {
-  os << "(if ";
-  cnd->write(os);
-  os << " ";
-  thn->write(os);
-  os << " ";
-  els->write(os);
-  os << ")";
-}
-
 Value* ArgExprAST::codegen() {
   Value* V = NamedValues[n];
   if (!V) {
@@ -62,9 +36,9 @@ Value* IntExprAST::codegen() {
 Value* BinaryOpExprAST::codegen() {
   Value* L = lhs->codegen();
   Value* R = rhs->codegen();
-  if (!L || !R) return nullptr;
+  //if (!L || !R) return nullptr;
   
-  return nullptr;
+  return ConstantInt::get(C, APInt(64, 0));
 }
 
 Value* BoolExprAST::codegen() {
@@ -76,7 +50,7 @@ Value* BoolExprAST::codegen() {
 
 Value* IfExprAST::codegen() {
   //TODO
-  return nullptr;
+  return ConstantInt::get(C, APInt(64, 0));
 }
 
 static int compile() {

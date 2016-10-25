@@ -91,7 +91,8 @@ static int gettok() {
     return ID;
   }
 
-  if (isdigit(LastChar) || LastChar == '-') {
+  // Integer
+  if (isdigit(LastChar)) {
     Token.clear();
     do {
       Token += LastChar;
@@ -101,21 +102,40 @@ static int gettok() {
     NumVal = strtod(Token.c_str(), 0);
     return INT;
   }
+
+  // Maybe negative number or minus operator
+  if (LastChar == '-') {
+    Token = LastChar;
+    LastChar = getchar();
+    if (isdigit(LastChar)) {
+      do {
+        Token += LastChar;
+        LastChar = getchar();
+      } while (isdigit(LastChar));
+      NumVal = strtod(Token.c_str(), 0);
+      return INT;
+    }
+    Op = GetOpType(Token);
+    return OP;
+  }
   
+  // Comment
   if (isComment(LastChar)) {
     do LastChar = getchar();
     while (LastChar != EOF && LastChar != '\n' && LastChar != '\r');
     if (LastChar != EOF)
       return gettok();
   }
-
+  
+  // Other operators
   if (isgraph(LastChar)) {
     Token = LastChar;
     while (isgraph(LastChar = getchar()))
       Token += LastChar;
     
-    if ((Op = GetOpType(Token)))
+    if ((Op = GetOpType(Token)) != unknown) {
       return OP;
+    }
     return UNKNOWN_OP;
   }
 
