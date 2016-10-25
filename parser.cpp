@@ -48,6 +48,7 @@ static bool isComment(char c) {
 
 static int gettok() {
   static int LastChar = ' ';
+  
   while (isspace(LastChar))
     LastChar = getchar();
 
@@ -81,12 +82,11 @@ static int gettok() {
   // Integer
   if (isdigit(LastChar)) {
     Token.clear();
+HandleInt:
     do {
       Token += LastChar;
       LastChar = getchar();
     } while (isdigit(LastChar));
-
-    //NumVal = strtod(Token.c_str(), 0);
     NumVal = strtoll(Token.c_str(), NULL, 0);
     return INT;
   }
@@ -95,19 +95,12 @@ static int gettok() {
   if (LastChar == '-') {
     Token = LastChar;
     LastChar = getchar();
-    if (isdigit(LastChar)) {
-      do {
-        Token += LastChar;
-        LastChar = getchar();
-      } while (isdigit(LastChar));
-      //NumVal = strtod(Token.c_str(), 0);
-      NumVal = strtoll(Token.c_str(), NULL, 0);
-      return INT;
-    }
+    if (isdigit(LastChar))
+      goto HandleInt;
     Op = GetOpType(Token);
     return OP;
   }
-  
+
   // Comment
   if (isComment(LastChar)) {
     do LastChar = getchar();
