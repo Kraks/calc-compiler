@@ -5,6 +5,7 @@
 #include <cctype>
 #include <cassert>
 
+#include "parser.hpp"
 #include "ast.hpp"
 
 enum Op {
@@ -125,14 +126,7 @@ std::unique_ptr<ExprAST> LogError(const char* msg) {
   return nullptr;
 }
 
-////////////////
-
 static std::vector<char> stack;
-static std::unique_ptr<ExprAST> ParseBoolExpr();
-static std::unique_ptr<ExprAST> ParseIntExpr();
-static std::unique_ptr<ExprAST> ParseIdentifierExpr();
-static std::unique_ptr<ExprAST> ParseSExpr();
-static std::unique_ptr<ExprAST> ParseExpression();
 
 static std::unique_ptr<ExprAST> ParseBoolExpr() {
   auto B = std::make_unique<BoolExprAST>(BoolVal);
@@ -169,9 +163,9 @@ static std::unique_ptr<ExprAST> ParseSExpr() {
     if (cnd && thn && els) {
       return std::make_unique<IfExprAST>(std::move(cnd), std::move(thn), std::move(els));
     }
-    return nullptr;
   }
-  else if (CurTok == OP) {
+
+  if (CurTok == OP) {
     std::string op = Token;
     getNextToken(); //eat op
     auto lhs = ParseExpression();
@@ -179,11 +173,9 @@ static std::unique_ptr<ExprAST> ParseSExpr() {
     if (lhs && rhs) {
       return std::make_unique<BinaryOpExprAST>(op, std::move(lhs), std::move(rhs));
     }
-    return nullptr;
   }
-  else {
-    return LogError("can not recognize s-exp");
-  }
+
+  return LogError("can not recognize s-exp");
 }
 
 static std::unique_ptr<ExprAST> ParseExpression() {
@@ -198,7 +190,7 @@ static std::unique_ptr<ExprAST> ParseExpression() {
         if (LastSExp) break;
         return nullptr;
       case RPAREN:
-        if (stack.size()>0 && stack.back() == '(') {
+        if (stack.size()>0 && stack.back()=='(') {
           stack.pop_back();
           getNextToken();
           return std::move(LastSExp);
@@ -219,7 +211,7 @@ static std::unique_ptr<ExprAST> ParseExpression() {
   return nullptr;
 }
 
-static std::unique_ptr<ExprAST> Parse() {
+std::unique_ptr<ExprAST> Parse() {
   getNextToken();
   auto E = ParseExpression();
   if (E) {
@@ -230,7 +222,7 @@ static std::unique_ptr<ExprAST> Parse() {
   return nullptr;
 }
 
-static void TestParser() {
+void TestParser() {
   std::unique_ptr<ExprAST> e = std::move(Parse());
   if (e) {
     std::cout << "get: ";

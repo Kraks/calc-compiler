@@ -1,6 +1,9 @@
 #include <iostream>
 #include <memory>
 
+#ifndef AST
+#define AST
+
 class ExprAST {
 public:
   virtual ~ExprAST() {}
@@ -64,3 +67,5 @@ public:
     os << ")";
   }
 };
+
+#endif
