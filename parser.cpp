@@ -20,7 +20,7 @@ enum TokenType {
   END
 };
 
-static int NumVal; //TODO maybe use long long
+static int64_t NumVal; 
 static int CurTok;
 static bool BoolVal;
 static std::string Token;
@@ -86,7 +86,8 @@ static int gettok() {
       LastChar = getchar();
     } while (isdigit(LastChar));
 
-    NumVal = strtod(Token.c_str(), 0);
+    //NumVal = strtod(Token.c_str(), 0);
+    NumVal = strtoll(Token.c_str(), NULL, 0);
     return INT;
   }
 
@@ -99,7 +100,8 @@ static int gettok() {
         Token += LastChar;
         LastChar = getchar();
       } while (isdigit(LastChar));
-      NumVal = strtod(Token.c_str(), 0);
+      //NumVal = strtod(Token.c_str(), 0);
+      NumVal = strtoll(Token.c_str(), NULL, 0);
       return INT;
     }
     Op = GetOpType(Token);
