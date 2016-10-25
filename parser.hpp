@@ -12,5 +12,6 @@ static std::unique_ptr<ExprAST> ParseExpression();
 
 std::unique_ptr<ExprAST> Parse();
 void TestParser();
+std::unique_ptr<ExprAST> LogError(const char* msg);
 
 #endif

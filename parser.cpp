@@ -8,11 +8,6 @@
 #include "parser.hpp"
 #include "ast.hpp"
 
-enum Op {
-  plus, minus, mult, division, mod,
-  gt, ge, lt, le, eq, neq 
-};
-
 enum TokenType {
   LPAREN = 1,
   RPAREN = 2,
@@ -29,6 +24,7 @@ static int NumVal; //TODO maybe use long long
 static int CurTok;
 static bool BoolVal;
 static std::string Token;
+static OpType Op;
 static char LastChar = ' ';
 
 static bool IsBoolOp(std::string str) {
@@ -37,6 +33,21 @@ static bool IsBoolOp(std::string str) {
 
 static bool IsIntOp(std::string str) {
   return str == "+" || str == "-" || str == "*" || str == "/" || str == "%";
+}
+
+static OpType GetOpType(std::string op) {
+  if (op == "+") return plus;
+  if (op == "-") return minus;
+  if (op == "*") return mult;
+  if (op == "/") return division;
+  if (op == "%") return mod;
+  if (op == ">") return gt;
+  if (op == ">=") return ge;
+  if (op == "<") return lt;
+  if (op == "<=") return le;
+  if (op == "==") return eq;
+  if (op == "!=") return neq;
+  return unknown;
 }
 
 static bool isComment(char c) {
@@ -102,7 +113,8 @@ static int gettok() {
     Token = LastChar;
     while (isgraph(LastChar = getchar()))
       Token += LastChar;
-    if (IsIntOp(Token) || IsBoolOp(Token))
+    
+    if ((Op = GetOpType(Token)))
       return OP;
     return UNKNOWN_OP;
   }
@@ -166,12 +178,11 @@ static std::unique_ptr<ExprAST> ParseSExpr() {
   }
 
   if (CurTok == OP) {
-    std::string op = Token;
     getNextToken(); //eat op
     auto lhs = ParseExpression();
     auto rhs = ParseExpression();
     if (lhs && rhs) {
-      return std::make_unique<BinaryOpExprAST>(op, std::move(lhs), std::move(rhs));
+      return std::make_unique<BinaryOpExprAST>(Op, std::move(lhs), std::move(rhs));
     }
   }
 
