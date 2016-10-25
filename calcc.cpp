@@ -21,6 +21,11 @@ static IRBuilder<NoFolder> Builder(C);
 static std::unique_ptr<Module> M = llvm::make_unique<Module>("calc", C);
 static std::map<int, Value*> NamedValues;
 
+Value* LogErrorV(const char* msg) {
+  LogError(msg);
+  return nullptr;
+}
+
 Value* ArgExprAST::codegen() {
   Value* V = NamedValues[n];
   if (!V) {
@@ -36,9 +41,36 @@ Value* IntExprAST::codegen() {
 Value* BinaryOpExprAST::codegen() {
   Value* L = lhs->codegen();
   Value* R = rhs->codegen();
-  //if (!L || !R) return nullptr;
+  if (!L || !R) return nullptr;
   
-  return ConstantInt::get(C, APInt(64, 0));
+  switch (op) {
+    case add:
+      return Builder.CreateAdd(L, R, "add");
+    case sub:
+      return Builder.CreateSub(L, R, "sub");
+    case mult:
+      return Builder.CreateMul(L, R, "mul");
+    case division:
+      return Builder.CreateSDiv(L, R, "sdiv");
+    case mod:
+      return Builder.CreateSRem(L, R, "srem");
+    case gt:
+      return Builder.CreateICmpSGT(L, R, "gt");
+    case ge:
+      return Builder.CreateICmpSGE(L, R, "ge");
+    case lt:
+      return Builder.CreateICmpSLT(L, R, "lt");
+    case le:
+      return Builder.CreateICmpSLE(L, R, "le");
+    case eq:
+      return Builder.CreateICmpEQ(L, R, "eq");
+    case neq:
+      return Builder.CreateICmpNE(L, R, "neq");
+    case unknown:
+    default:
+      return LogErrorV("unknown operator");
+  }
+  
 }
 
 Value* BoolExprAST::codegen() {

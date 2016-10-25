@@ -36,8 +36,8 @@ static bool IsIntOp(std::string str) {
 }
 
 static OpType GetOpType(std::string op) {
-  if (op == "+") return plus;
-  if (op == "-") return minus;
+  if (op == "+") return add;
+  if (op == "-") return sub;
   if (op == "*") return mult;
   if (op == "/") return division;
   if (op == "%") return mod;

@@ -17,7 +17,7 @@
 using namespace llvm;
 
 enum OpType {
-  plus=1, minus, mult, division, mod,
+  add=1, sub, mult, division, mod,
   gt, ge, lt, le, eq, neq, unknown
 };
 
