@@ -10,14 +10,14 @@
 
 enum TokenType {
   LPAREN = 1,
-  RPAREN = 2,
-  BOOL = 3,
-  INT = 4,
-  ID = 5,
-  IF = 6,
-  OP = 7,
-  UNKNOWN_OP = 8,
-  END = 9
+  RPAREN,
+  BOOL,
+  INT,
+  ID,
+  IF,
+  OP,
+  UNKNOWN_OP,
+  END
 };
 
 static int NumVal; //TODO maybe use long long

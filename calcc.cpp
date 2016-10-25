@@ -70,7 +70,6 @@ Value* BinaryOpExprAST::codegen() {
     default:
       return LogErrorV("unknown operator");
   }
-  
 }
 
 Value* BoolExprAST::codegen() {
