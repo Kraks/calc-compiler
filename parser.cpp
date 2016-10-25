@@ -125,10 +125,8 @@ HandleInt:
     Token = LastChar;
     while (isgraph(LastChar = getchar()))
       Token += LastChar;
-    
-    if ((Op = GetOpType(Token)) != unknown) {
+    if ((Op = GetOpType(Token)) != unknown) 
       return OP;
-    }
     return UNKNOWN;
   }
 
