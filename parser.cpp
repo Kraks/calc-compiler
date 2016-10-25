@@ -47,10 +47,23 @@ static bool isComment(char c) {
 }
 
 static int gettok() {
-  static int LastChar = ' ';
+  static int LastChar = getchar();
+
+  if (isComment(LastChar)) {
+HandleComment:
+    do LastChar = getchar();
+    while (LastChar != EOF && LastChar != '\n' && LastChar != '\r');
+    if (LastChar != EOF) return gettok();
+  }
   
-  while (isspace(LastChar))
-    LastChar = getchar();
+  while (isspace(LastChar)) {
+    if (LastChar == '\n' || LastChar == '\r') {
+      LastChar = getchar();
+      if (isComment(LastChar)) goto HandleComment;
+    } else {
+      LastChar = getchar();
+    }
+  }
 
   if (LastChar == '('){
     Token = LastChar;
@@ -75,7 +88,6 @@ static int gettok() {
       BoolVal = Token == "true";
       return BOOL;
     }
-
     return ID;
   }
 
@@ -95,20 +107,11 @@ HandleInt:
   if (LastChar == '-') {
     Token = LastChar;
     LastChar = getchar();
-    if (isdigit(LastChar))
-      goto HandleInt;
+    if (isdigit(LastChar)) goto HandleInt;
     Op = GetOpType(Token);
     return OP;
   }
 
-  // Comment
-  if (isComment(LastChar)) {
-    do LastChar = getchar();
-    while (LastChar != EOF && LastChar != '\n' && LastChar != '\r');
-    if (LastChar != EOF)
-      return gettok();
-  }
-  
   // Other operators
   if (isgraph(LastChar)) {
     Token = LastChar;
@@ -218,6 +221,7 @@ static std::unique_ptr<ExprAST> ParseExpression() {
       case ID:
         return ParseIdentifierExpr();
       default:
+        fprintf(stderr, "CurTok: %d\n", CurTok);
         return LogError("can not parse top-level expression");
     }
   }
