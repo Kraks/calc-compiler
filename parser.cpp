@@ -5,6 +5,8 @@
 #include <cctype>
 #include <cassert>
 
+#include "llvm/ADT/APInt.h"
+
 #include "parser.hpp"
 #include "ast.hpp"
 
@@ -16,7 +18,7 @@ enum TokenType {
   ID,
   IF,
   OP,
-  UNKNOWN_OP,
+  UNKNOWN,
   END
 };
 
@@ -99,6 +101,12 @@ HandleInt:
       Token += LastChar;
       LastChar = getchar();
     } while (isdigit(LastChar));
+    unsigned int bits = APInt::getBitsNeeded(llvm::StringRef(Token), 10);
+    if (Token.at(0) == '-') {
+      if (Token != "-9223372036854775808" && bits > 64) return UNKNOWN;
+    }
+    else if (bits > 63)
+      return UNKNOWN;
     NumVal = strtoll(Token.c_str(), NULL, 0);
     return INT;
   }
@@ -121,7 +129,7 @@ HandleInt:
     if ((Op = GetOpType(Token)) != unknown) {
       return OP;
     }
-    return UNKNOWN_OP;
+    return UNKNOWN;
   }
 
   if (LastChar == EOF)
@@ -222,7 +230,6 @@ static std::unique_ptr<ExprAST> ParseExpression() {
       case ID:
         return ParseIdentifierExpr();
       default:
-        fprintf(stderr, "CurTok: %d\n", CurTok);
         return LogError("can not parse top-level expression");
     }
   }
