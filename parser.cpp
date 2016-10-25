@@ -27,14 +27,6 @@ static std::string Token;
 static OpType Op;
 static char LastChar = ' ';
 
-static bool IsBoolOp(std::string str) {
-  return str == ">" || str == ">=" || str == "<" || str == "<=" || str == "==" || str == "!=";
-}
-
-static bool IsIntOp(std::string str) {
-  return str == "+" || str == "-" || str == "*" || str == "/" || str == "%";
-}
-
 static OpType GetOpType(std::string op) {
   if (op == "+") return add;
   if (op == "-") return sub;
@@ -59,11 +51,11 @@ static int gettok() {
   while (isspace(LastChar))
     LastChar = getchar();
 
-  if (LastChar == '(') {
+  if (LastChar == '('){
     Token = LastChar;
     LastChar = getchar();
     return LPAREN;
-  }
+  } 
 
   if (LastChar == ')') {
     Token = LastChar;
@@ -78,13 +70,8 @@ static int gettok() {
 
     if (Token == "if") return IF;
 
-    if (Token == "true") {
-      BoolVal = true;
-      return BOOL;
-    }
-
-    if (Token == "false") {
-      BoolVal = false;
+    if (Token == "true" || Token == "false") {
+      BoolVal = Token == "true";
       return BOOL;
     }
 
