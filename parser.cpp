@@ -18,6 +18,8 @@ enum TokenType {
   ID,
   IF,
   OP,
+  SEQ,
+  WHILE,
   UNKNOWN,
   END
 };
@@ -85,6 +87,8 @@ HandleComment:
       Lexeme += LastChar;
 
     if (Lexeme == "if") return IF;
+    if (Lexeme == "while") return WHILE;
+    if (Lexeme == "seq") return SEQ;
 
     if (Lexeme == "true" || Lexeme == "false") {
       BoolVal = Lexeme == "true";
@@ -171,6 +175,13 @@ static std::unique_ptr<ExprAST> ParseIdentifierExpr() {
     getNextToken();
     return std::make_unique<ArgExprAST>(n);
   }
+  if (Lexeme.at(0) == 'm') {
+    assert(Lexeme.size() == 2);
+    int n = Lexeme.at(1) - '0';
+    assert(n >= 0 && n <= 9);
+    getNextToken();
+    return std::make_unique<MutableVarExprAST>(n);
+  }
   else {
     return LogError("expected an argument identifier");
   }
@@ -183,9 +194,24 @@ static std::unique_ptr<ExprAST> ParseSExpr() {
     auto cnd = ParseExpression();
     auto thn = ParseExpression();
     auto els = ParseExpression();
-    if (cnd && thn && els) {
+    if (cnd && thn && els)
       return std::make_unique<IfExprAST>(std::move(cnd), std::move(thn), std::move(els));
-    }
+  }
+
+  if (CurTok == SEQ) {
+    getNextToken(); //eat 'seq'
+    auto fst = ParseExpression();
+    auto snd = ParseExpression();
+    if (fst && snd)
+      return std::make_unique<SeqExprAST>(std::move(fst), std::move(snd)); 
+  }
+
+  if (CurTok == WHILE) {
+    getNextToken(); //eat 'while'
+    auto cnd = ParseExpression();
+    auto body = ParseExpression();
+    if (cnd && body)
+      return std::make_unique<WhileExprAST>(std::move(cnd), std::move(body));
   }
 
   if (CurTok == OP) {
@@ -193,9 +219,8 @@ static std::unique_ptr<ExprAST> ParseSExpr() {
     getNextToken(); //eat op
     auto lhs = ParseExpression();
     auto rhs = ParseExpression();
-    if (lhs && rhs) {
+    if (lhs && rhs)
       return std::make_unique<BinaryOpExprAST>(thisOp, std::move(lhs), std::move(rhs));
-    }
   }
 
   return LogError("can not recognize s-exp");

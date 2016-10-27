@@ -34,6 +34,11 @@ Value* ArgExprAST::codegen() {
   return V;
 }
 
+Value* MutableVarExprAST::codegen() {
+  //TODO
+  return nullptr;
+}
+
 Value* IntExprAST::codegen() {
   return ConstantInt::get(C, APInt(64, val, /*isSigned=*/true));
 }
@@ -114,6 +119,18 @@ Value* IfExprAST::codegen() {
   
   return PN;
 }
+
+Value* SeqExprAST::codegen() {
+  //TODO
+  return nullptr;
+}
+
+Value* WhileExprAST::codegen() {
+  //TODO
+  return nullptr;
+}
+
+//////////////////////////////
 
 static int compile() {
   M->setTargetTriple(llvm::sys::getProcessTriple());

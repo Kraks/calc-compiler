@@ -22,6 +22,9 @@ static std::string OpToString(OpType op) {
 void ArgExprAST::write(std::ostream& os) {
   os << "a" << n;
 }
+void MutableVarExprAST::write(std::ostream& os) {
+  os << "m" << n;
+}
 void IntExprAST::write(std::ostream& os) {
   os << val;
 }
@@ -42,5 +45,19 @@ void IfExprAST::write(std::ostream& os) {
   thn->write(os);
   os << " ";
   els->write(os);
+  os << ")";
+}
+void SeqExprAST::write(std::ostream& os) {
+  os << "(seq ";
+  fst->write(os);
+  os << " ";
+  snd->write(os);
+  os << ")";
+}
+void WhileExprAST::write(std::ostream& os) {
+  os << "(while ";
+  cnd->write(os);
+  os << " ";
+  body->write(os);
   os << ")";
 }

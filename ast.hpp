@@ -28,10 +28,18 @@ public:
   virtual void write(std::ostream& os) = 0;
 };
 
-class ArgExprAST : public ExprAST{
+class ArgExprAST : public ExprAST {
   int n;
 public:
   ArgExprAST(int n) : n(n) {}
+  Value* codegen() override;
+  void write(std::ostream& os) override;
+};
+
+class MutableVarExprAST : public ExprAST {
+  int n;
+public:
+  MutableVarExprAST(int n) : n(n) {}
   Value* codegen() override;
   void write(std::ostream& os) override;
 };
@@ -70,5 +78,23 @@ public:
   Value* codegen() override;
   void write(std::ostream& os) override;
 };
+
+class SeqExprAST : public ExprAST {
+  std::unique_ptr<ExprAST> fst, snd;
+public:
+  SeqExprAST(std::unique_ptr<ExprAST> fst, std::unique_ptr<ExprAST> snd)
+    : fst(std::move(fst)), snd(std::move(snd)) {}
+  Value* codegen() override;
+  void write(std::ostream& os) override;
+};
+
+class WhileExprAST : public ExprAST {
+  std::unique_ptr<ExprAST> cnd, body;
+public:
+  WhileExprAST(std::unique_ptr<ExprAST> cnd, std::unique_ptr<ExprAST> body)
+    : cnd(std::move(std)), body(std::move(body)) {}
+  Value* codegen() override;
+  void write(std::ostream& os) override;
+}
 
 #endif
