@@ -92,9 +92,9 @@ class WhileExprAST : public ExprAST {
   std::unique_ptr<ExprAST> cnd, body;
 public:
   WhileExprAST(std::unique_ptr<ExprAST> cnd, std::unique_ptr<ExprAST> body)
-    : cnd(std::move(std)), body(std::move(body)) {}
+    : cnd(std::move(cnd)), body(std::move(body)) {}
   Value* codegen() override;
   void write(std::ostream& os) override;
-}
+};
 
 #endif
