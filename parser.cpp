@@ -25,7 +25,7 @@ enum TokenType {
 static int64_t NumVal; 
 static int CurTok;
 static bool BoolVal;
-static std::string Token;
+static std::string Lexeme;
 static OpType Op;
 static char LastChar = ' ';
 
@@ -68,26 +68,26 @@ HandleComment:
   }
 
   if (LastChar == '('){
-    Token = LastChar;
+    Lexeme = LastChar;
     LastChar = getchar();
     return LPAREN;
   } 
 
   if (LastChar == ')') {
-    Token = LastChar;
+    Lexeme = LastChar;
     LastChar = getchar();
     return RPAREN;
   }
 
   if (isalpha(LastChar)) {
-    Token = LastChar;
+    Lexeme = LastChar;
     while (isalnum(LastChar = getchar()))
-      Token += LastChar;
+      Lexeme += LastChar;
 
-    if (Token == "if") return IF;
+    if (Lexeme == "if") return IF;
 
-    if (Token == "true" || Token == "false") {
-      BoolVal = Token == "true";
+    if (Lexeme == "true" || Lexeme == "false") {
+      BoolVal = Lexeme == "true";
       return BOOL;
     }
     return ID;
@@ -95,37 +95,37 @@ HandleComment:
 
   // Integer
   if (isdigit(LastChar)) {
-    Token.clear();
+    Lexeme.clear();
 HandleInt:
     do {
-      Token += LastChar;
+      Lexeme += LastChar;
       LastChar = getchar();
     } while (isdigit(LastChar));
-    unsigned int bits = APInt::getBitsNeeded(llvm::StringRef(Token), 10);
-    if (Token.at(0) == '-') {
-      if (Token != "-9223372036854775808" && bits > 64) return UNKNOWN;
+    unsigned int bits = APInt::getBitsNeeded(llvm::StringRef(Lexeme), 10);
+    if (Lexeme.at(0) == '-') {
+      if (Lexeme != "-9223372036854775808" && bits > 64) return UNKNOWN;
     }
     else if (bits > 63)
       return UNKNOWN;
-    NumVal = strtoll(Token.c_str(), NULL, 0);
+    NumVal = strtoll(Lexeme.c_str(), NULL, 0);
     return INT;
   }
 
   // Maybe negative number or minus operator
   if (LastChar == '-') {
-    Token = LastChar;
+    Lexeme = LastChar;
     LastChar = getchar();
     if (isdigit(LastChar)) goto HandleInt;
-    Op = GetOpType(Token);
+    Op = GetOpType(Lexeme);
     return OP;
   }
 
   // Other operators
   if (isgraph(LastChar)) {
-    Token = LastChar;
+    Lexeme = LastChar;
     while (isgraph(LastChar = getchar()))
-      Token += LastChar;
-    if ((Op = GetOpType(Token)) != unknown) 
+      Lexeme += LastChar;
+    if ((Op = GetOpType(Lexeme)) != unknown) 
       return OP;
     return UNKNOWN;
   }
@@ -164,9 +164,9 @@ static std::unique_ptr<ExprAST> ParseIntExpr() {
 }
 
 static std::unique_ptr<ExprAST> ParseIdentifierExpr() {
-  if (Token.at(0) == 'a') {
-    assert(Token.size() == 2);
-    int n = Token.at(1) - '0';
+  if (Lexeme.at(0) == 'a') {
+    assert(Lexeme.size() == 2);
+    int n = Lexeme.at(1) - '0';
     assert(n >= 0 && n <= 5);
     getNextToken();
     return std::make_unique<ArgExprAST>(n);
