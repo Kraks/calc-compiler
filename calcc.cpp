@@ -134,8 +134,25 @@ Value* SeqExprAST::codegen() {
 }
 
 Value* WhileExprAST::codegen() {
-  //TODO
-  return nullptr;
+  BasicBlock* EntryBlock = Builder.GetInsertBlock();
+  Function* TheFunction = EntryBlock->getParent();
+
+  BasicBlock* BodyBlock = BasicBlock::Create(Context, "body", TheFunction);
+  BasicBlock* ContBlock = BasicBlock::Create(Context, "cont", TheFunction);
+
+  Value* CndValue = cnd->codegen();
+  Builder.CreateCondBr(CndValue, BodyBlock, ContBlock);
+  
+  Builder.SetInsertPoint(BodyBlock);
+  Value* BodyValue = body->codegen();
+  CndValue = cnd->codegen();
+  Builder.CreateCondBr(CndValue, BodyBlock, ContBlock);
+  
+  Builder.SetInsertPoint(ContBlock);
+  PHINode* PH = Builder.CreatePHI(Type::getInt64Ty(Context), 2, "tmp");
+  PH->addIncoming(ConstantInt::get(Context, APInt(64, 0, true)), EntryBlock);
+  PH->addIncoming(BodyValue, BodyBlock);
+  return PH;
 }
 
 Value* SetExprAST::codegen() {
@@ -183,7 +200,7 @@ static int compile() {
 
     Value* RetVal = e->codegen();
     Builder.CreateRet(RetVal);
-    assert(!verifyModule(*M, &outs()));
+    //assert(!verifyModule(*M, &outs()));
     M->dump();
     return 0;
   }
