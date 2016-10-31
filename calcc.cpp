@@ -43,7 +43,7 @@ Value* MutableVarExprAST::codegen() {
 }
 
 Value* IntExprAST::codegen() {
-  return ConstantInt::get(C, APInt(64, val, /*isSigned=*/true));
+  return ConstantInt::get(Context, APInt(64, val, /*isSigned=*/true));
 }
 
 Value* BinaryOpExprAST::codegen() {
@@ -157,9 +157,9 @@ static int compile() {
 
   // setup mutable symbol table
   std::string m("m");
-  for (int mutIdx = 0; mutIdx <= 9; mutIdx++) {
-    EntryBlock.CreateAlloca(Type::getInt64Ty(Context), 0, 
-                            (m+(char)('0'+i)).c_str());
+  for (int i = 0; i <= 9; i++) {
+    Builder.CreateAlloca(Type::getInt64Ty(Context), 0, 
+                         (m+(char)('0'+i)).c_str());
   }
 
   std::unique_ptr<ExprAST> e = std::move(Parse());

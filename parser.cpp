@@ -10,20 +10,6 @@
 #include "parser.hpp"
 #include "ast.hpp"
 
-enum TokenType {
-  LPAREN = 1,
-  RPAREN,
-  BOOL,
-  INT,
-  ID,
-  IF,
-  OP,
-  SEQ,
-  WHILE,
-  UNKNOWN,
-  END
-};
-
 static int64_t NumVal; 
 static int CurTok;
 static bool BoolVal;
@@ -178,6 +164,7 @@ static std::unique_ptr<ExprAST> ParseIdentifierExpr() {
   }
   if (Lexeme.at(0) == 'm') {
     assert(Lexeme.size() == 2);
+    int n = Lexeme.at(1) - '0';
     assert(n >= 0 && n <= 9);
     getNextToken();
     return std::make_unique<MutableVarExprAST>(Lexeme);
@@ -209,8 +196,10 @@ static std::unique_ptr<ExprAST> ParseSExpr() {
   if (CurTok == SET) {
     getNextToken();
     auto val = ParseExpression();
-    auto var = ParseIdentifierExpr();
-    if (val && var)
+    std::string var = Lexeme;
+    int LastCurTok = ID;
+    getNextToken();
+    if (val && LastCurTok == ID)
       return std::make_unique<SetExprAST>(std::move(val), var);
   }
 
@@ -242,7 +231,7 @@ static std::unique_ptr<ExprAST> ParseExpression() {
       case LPAREN:
         stack.push_back('(');
         getNextToken();
-        LastSExp = std::move(ParseSExpr());
+        LastSExp = ParseSExpr();
         if (LastSExp) break;
         return nullptr;
       case RPAREN:
@@ -279,7 +268,7 @@ std::unique_ptr<ExprAST> Parse() {
 }
 
 void TestParser() {
-  std::unique_ptr<ExprAST> e = std::move(Parse());
+  std::unique_ptr<ExprAST> e = Parse();
   if (e) {
     std::cout << "get: ";
     e->write(std::cout);

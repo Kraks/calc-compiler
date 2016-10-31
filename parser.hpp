@@ -4,6 +4,21 @@
 #ifndef PARSER
 #define PARSER
 
+enum TokenType {
+  LPAREN = 1,
+  RPAREN,
+  BOOL,
+  INT,
+  ID,
+  IF,
+  OP,
+  SEQ,
+  SET,
+  WHILE,
+  UNKNOWN,
+  END
+};
+
 static std::unique_ptr<ExprAST> ParseBoolExpr();
 static std::unique_ptr<ExprAST> ParseIntExpr();
 static std::unique_ptr<ExprAST> ParseIdentifierExpr();
