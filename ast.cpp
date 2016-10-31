@@ -36,7 +36,8 @@ void BinaryOpExprAST::write(std::ostream& os) {
   os << ")";
 }
 void BoolExprAST::write(std::ostream& os) {
-  os << val;
+  if (val) os << "true";
+  else os << "false";
 }
 void IfExprAST::write(std::ostream& os) {
   os << "(if ";
