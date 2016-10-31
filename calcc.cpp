@@ -124,8 +124,13 @@ Value* IfExprAST::codegen() {
 }
 
 Value* SeqExprAST::codegen() {
-  //TODO
-  return nullptr;
+  Value* fstVal = fst->codegen();
+  if (fstVal) {
+    Value* sndVal = snd->codegen();
+    if (sndVal) return sndVal;
+    return LogErrorV("Can not generate code for the second part");
+  }
+  return LogErrorV("Can not generate code for the first part");
 }
 
 Value* WhileExprAST::codegen() {
