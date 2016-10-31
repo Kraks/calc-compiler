@@ -16,11 +16,11 @@
 using namespace llvm;
 using namespace std;
 
-static LLVMContext C;
-static IRBuilder<NoFolder> Builder(C);
+static LLVMContext Context;
+static IRBuilder<NoFolder> Builder(Context);
 static std::unique_ptr<Module> M = llvm::make_unique<Module>("calc", C);
 static std::map<int, Value*> ArgumentValues;
-static std::map<int, AllocaInst*> MutableValues;
+static std::map<std::string, AllocaInst*> MutableValues;
 
 Value* LogErrorV(const char* msg) {
   LogError(msg);
@@ -30,14 +30,16 @@ Value* LogErrorV(const char* msg) {
 Value* ArgExprAST::codegen() {
   Value* V = ArgumentValues[n];
   if (!V) {
-    LogError("Unknown variable name");
+    LogErrorV("Unknown argument name");
   }
   return V;
 }
 
 Value* MutableVarExprAST::codegen() {
-  //TODO
-  return nullptr;
+  Value* V = MutableValues[name];
+  if (!V)
+    return LogErrorV("Unknown variable name");
+  return Builder.CreateLoad(V, name.c_str());
 }
 
 Value* IntExprAST::codegen() {
@@ -80,9 +82,9 @@ Value* BinaryOpExprAST::codegen() {
 
 Value* BoolExprAST::codegen() {
   if (val) {
-    return ConstantInt::getTrue(C);
+    return ConstantInt::getTrue(Context);
   }
-  return ConstantInt::getFalse(C);
+  return ConstantInt::getFalse(Context);
 }
 
 Value* IfExprAST::codegen() {
@@ -114,7 +116,7 @@ Value* IfExprAST::codegen() {
   
   TheFunction->getBasicBlockList().push_back(MergBB);
   Builder.SetInsertPoint(MergBB);
-  PHINode* PN = Builder.CreatePHI(Type::getInt64Ty(C), 2, "iftmp");
+  PHINode* PN = Builder.CreatePHI(Type::getInt64Ty(Context), 2, "iftmp");
   PN->addIncoming(ThnValue, ThenBB);
   PN->addIncoming(ElsValue, ElseBB);
   
@@ -131,19 +133,33 @@ Value* WhileExprAST::codegen() {
   return nullptr;
 }
 
+Value* SetExprAST::codegen() {
+  Value* value = val->codegen();
+  AllocaInst* alloca = MutableValues[var];
+  return Builder.CreateStore(value, alloca);
+}
+
 //////////////////////////////
 
 static int compile() {
   M->setTargetTriple(llvm::sys::getProcessTriple());
-  std::vector<Type *> SixInts(6, Type::getInt64Ty(C));
-  FunctionType *FT = FunctionType::get(Type::getInt64Ty(C), SixInts, false);
+  std::vector<Type *> SixInts(6, Type::getInt64Ty(Context));
+  FunctionType *FT = FunctionType::get(Type::getInt64Ty(Context), SixInts, false);
   Function *F = Function::Create(FT, Function::ExternalLinkage, "f", &*M);
-  BasicBlock *BB = BasicBlock::Create(C, "entry", F);
-  Builder.SetInsertPoint(BB);
-  
-  int idx = 0;
+  BasicBlock *EntryBlock = BasicBlock::Create(C, "entry", F);
+  Builder.SetInsertPoint(EntryBlock);
+    
+  // setup argument symbol table
+  int argIdx = 0;
   for (auto& Arg : F->args()) {
-    ArgumentValues[idx++] = &Arg;
+    ArgumentValues[argIdx++] = &Arg;
+  }
+
+  // setup mutable symbol table
+  std::string m("m");
+  for (int mutIdx = 0; mutIdx <= 9; mutIdx++) {
+    EntryBlock.CreateAlloca(Type::getInt64Ty(Context), 0, 
+                            (m+(char)('0'+i)).c_str());
   }
 
   std::unique_ptr<ExprAST> e = std::move(Parse());

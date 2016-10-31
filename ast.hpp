@@ -97,4 +97,14 @@ public:
   void write(std::ostream& os) override;
 };
 
+class SetExprAST : public ExprAST {
+  std::unique_ptr<ExprAST> val;
+  std::string var;
+public:
+  SetExprAST(std::unique_ptr<ExprAST> val, std::string var)
+    : val(std::move(val)), var(var) {}
+  Value* codegen() override;
+  void write(std::ostream& os) override;
+};
+
 #endif

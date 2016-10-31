@@ -89,6 +89,7 @@ HandleComment:
     if (Lexeme == "if") return IF;
     if (Lexeme == "while") return WHILE;
     if (Lexeme == "seq") return SEQ;
+    if (Lexeme == "set") return SET;
 
     if (Lexeme == "true" || Lexeme == "false") {
       BoolVal = Lexeme == "true";
@@ -203,6 +204,14 @@ static std::unique_ptr<ExprAST> ParseSExpr() {
     auto snd = ParseExpression();
     if (fst && snd)
       return std::make_unique<SeqExprAST>(std::move(fst), std::move(snd)); 
+  }
+
+  if (CurTok == SET) {
+    getNextToken();
+    auto val = ParseExpression();
+    auto var = ParseIdentifierExpr();
+    if (val && var)
+      return std::make_unique<SetExprAST>(std::move(val), var);
   }
 
   if (CurTok == WHILE) {

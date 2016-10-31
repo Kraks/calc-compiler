@@ -61,3 +61,10 @@ void WhileExprAST::write(std::ostream& os) {
   body->write(os);
   os << ")";
 }
+void SetExprAST::write(std::ostream& os) {
+  os << "(set ";
+  val->write(os);
+  os << " ";
+  os << var;
+  os << ")";
+}
