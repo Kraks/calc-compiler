@@ -40,6 +40,9 @@ class MutableVarExprAST : public ExprAST {
   std::string name;
 public:
   MutableVarExprAST(std::string name) : name(name) {}
+  std::string& getName() {
+    return name;
+  }
   Value* codegen() override;
   void write(std::ostream& os) override;
 };
@@ -98,11 +101,10 @@ public:
 };
 
 class SetExprAST : public ExprAST {
-  std::unique_ptr<ExprAST> val;
-  std::string var;
+  std::unique_ptr<ExprAST> val, var;
 public:
-  SetExprAST(std::unique_ptr<ExprAST> val, std::string var)
-    : val(std::move(val)), var(var) {}
+  SetExprAST(std::unique_ptr<ExprAST> val, std::unique_ptr<ExprAST> var)
+    : val(std::move(val)), var(std::move(var)) {}
   Value* codegen() override;
   void write(std::ostream& os) override;
 };

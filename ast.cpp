@@ -65,6 +65,6 @@ void SetExprAST::write(std::ostream& os) {
   os << "(set ";
   val->write(os);
   os << " ";
-  os << var;
+  var->write(os);
   os << ")";
 }

@@ -10,6 +10,12 @@
 #include "parser.hpp"
 #include "ast.hpp"
 
+static std::unique_ptr<ExprAST> ParseBoolExpr();
+static std::unique_ptr<ExprAST> ParseIntExpr();
+static std::unique_ptr<ExprAST> ParseIdentifierExpr();
+static std::unique_ptr<ExprAST> ParseSExpr();
+static std::unique_ptr<ExprAST> ParseExpression();
+
 static int64_t NumVal; 
 static int CurTok;
 static bool BoolVal;
@@ -166,8 +172,9 @@ static std::unique_ptr<ExprAST> ParseIdentifierExpr() {
     assert(Lexeme.size() == 2);
     int n = Lexeme.at(1) - '0';
     assert(n >= 0 && n <= 9);
+    std::string var = Lexeme;
     getNextToken();
-    return std::make_unique<MutableVarExprAST>(Lexeme);
+    return std::make_unique<MutableVarExprAST>(var);
   }
   else {
     return LogError("expected an argument identifier");
@@ -196,11 +203,9 @@ static std::unique_ptr<ExprAST> ParseSExpr() {
   if (CurTok == SET) {
     getNextToken();
     auto val = ParseExpression();
-    std::string var = Lexeme;
-    int LastCurTok = ID;
-    getNextToken();
-    if (val && LastCurTok == ID)
-      return std::make_unique<SetExprAST>(std::move(val), var);
+    auto var = ParseExpression();
+    if (val && var)
+      return std::make_unique<SetExprAST>(std::move(val), std::move(var));
   }
 
   if (CurTok == WHILE) {

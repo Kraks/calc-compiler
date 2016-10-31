@@ -38,7 +38,7 @@ Value* ArgExprAST::codegen() {
 Value* MutableVarExprAST::codegen() {
   Value* V = MutableValues[name];
   if (!V)
-    return LogErrorV("Unknown variable name");
+    LogErrorV("Unknown variable name");
   return Builder.CreateLoad(V, name.c_str());
 }
 
@@ -135,8 +135,13 @@ Value* WhileExprAST::codegen() {
 
 Value* SetExprAST::codegen() {
   Value* value = val->codegen();
-  AllocaInst* alloca = MutableValues[var];
-  return Builder.CreateStore(value, alloca);
+  MutableVarExprAST* mvar = dynamic_cast<MutableVarExprAST*>(var.get());
+  AllocaInst* alloca = MutableValues[mvar->getName()];
+  if (value && alloca) {
+    Builder.CreateStore(value, alloca);
+    return value;
+  }
+  return LogErrorV("Unknown mutable variable");
 }
 
 //////////////////////////////
@@ -158,11 +163,13 @@ static int compile() {
   // setup mutable symbol table
   std::string m("m");
   for (int i = 0; i <= 9; i++) {
-    Builder.CreateAlloca(Type::getInt64Ty(Context), 0, 
-                         (m+(char)('0'+i)).c_str());
+    std::string var = m+(char)('0'+i);
+    AllocaInst* alloca = Builder.CreateAlloca(Type::getInt64Ty(Context), 0, var.c_str());
+    Builder.CreateStore(ConstantInt::get(Context, APInt(64, 0, true)), alloca);
+    MutableValues[var] = alloca;
   }
 
-  std::unique_ptr<ExprAST> e = std::move(Parse());
+  std::unique_ptr<ExprAST> e = Parse();
 
   if (e) {
     std::cerr << "; ";
