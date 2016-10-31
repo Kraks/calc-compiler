@@ -177,10 +177,9 @@ static std::unique_ptr<ExprAST> ParseIdentifierExpr() {
   }
   if (Lexeme.at(0) == 'm') {
     assert(Lexeme.size() == 2);
-    int n = Lexeme.at(1) - '0';
     assert(n >= 0 && n <= 9);
     getNextToken();
-    return std::make_unique<MutableVarExprAST>(n);
+    return std::make_unique<MutableVarExprAST>(Lexeme);
   }
   else {
     return LogError("expected an argument identifier");

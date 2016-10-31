@@ -37,9 +37,9 @@ public:
 };
 
 class MutableVarExprAST : public ExprAST {
-  int n;
+  std::string name;
 public:
-  MutableVarExprAST(int n) : n(n) {}
+  MutableVarExprAST(std::string name) : name(name) {}
   Value* codegen() override;
   void write(std::ostream& os) override;
 };

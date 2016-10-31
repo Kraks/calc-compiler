@@ -19,7 +19,8 @@ using namespace std;
 static LLVMContext C;
 static IRBuilder<NoFolder> Builder(C);
 static std::unique_ptr<Module> M = llvm::make_unique<Module>("calc", C);
-static std::map<int, Value*> NamedValues;
+static std::map<int, Value*> ArgumentValues;
+static std::map<int, AllocaInst*> MutableValues;
 
 Value* LogErrorV(const char* msg) {
   LogError(msg);
@@ -27,7 +28,7 @@ Value* LogErrorV(const char* msg) {
 }
 
 Value* ArgExprAST::codegen() {
-  Value* V = NamedValues[n];
+  Value* V = ArgumentValues[n];
   if (!V) {
     LogError("Unknown variable name");
   }
@@ -142,7 +143,7 @@ static int compile() {
   
   int idx = 0;
   for (auto& Arg : F->args()) {
-    NamedValues[idx++] = &Arg;
+    ArgumentValues[idx++] = &Arg;
   }
 
   std::unique_ptr<ExprAST> e = std::move(Parse());

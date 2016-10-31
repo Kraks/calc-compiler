@@ -23,7 +23,7 @@ void ArgExprAST::write(std::ostream& os) {
   os << "a" << n;
 }
 void MutableVarExprAST::write(std::ostream& os) {
-  os << "m" << n;
+  os << name;
 }
 void IntExprAST::write(std::ostream& os) {
   os << val;
