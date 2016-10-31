@@ -18,7 +18,7 @@ using namespace std;
 
 static LLVMContext Context;
 static IRBuilder<NoFolder> Builder(Context);
-static std::unique_ptr<Module> M = llvm::make_unique<Module>("calc", C);
+static std::unique_ptr<Module> M = llvm::make_unique<Module>("calc", Context);
 static std::map<int, Value*> ArgumentValues;
 static std::map<std::string, AllocaInst*> MutableValues;
 
@@ -93,9 +93,9 @@ Value* IfExprAST::codegen() {
     return nullptr;
   
   Function* TheFunction = Builder.GetInsertBlock()->getParent();
-  BasicBlock* ThenBB = BasicBlock::Create(C, "then", TheFunction);
-  BasicBlock* ElseBB = BasicBlock::Create(C, "else");
-  BasicBlock* MergBB = BasicBlock::Create(C, "ifcont");
+  BasicBlock* ThenBB = BasicBlock::Create(Context, "then", TheFunction);
+  BasicBlock* ElseBB = BasicBlock::Create(Context, "else");
+  BasicBlock* MergBB = BasicBlock::Create(Context, "ifcont");
 
   Builder.CreateCondBr(CndValue, ThenBB, ElseBB);
 
@@ -146,7 +146,7 @@ static int compile() {
   std::vector<Type *> SixInts(6, Type::getInt64Ty(Context));
   FunctionType *FT = FunctionType::get(Type::getInt64Ty(Context), SixInts, false);
   Function *F = Function::Create(FT, Function::ExternalLinkage, "f", &*M);
-  BasicBlock *EntryBlock = BasicBlock::Create(C, "entry", F);
+  BasicBlock *EntryBlock = BasicBlock::Create(Context, "entry", F);
   Builder.SetInsertPoint(EntryBlock);
     
   // setup argument symbol table
