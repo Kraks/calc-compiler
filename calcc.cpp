@@ -147,6 +147,7 @@ Value* WhileExprAST::codegen() {
   Value* BodyValue = body->codegen();
   CndValue = cnd->codegen();
   Builder.CreateCondBr(CndValue, BodyBlock, ContBlock);
+  BodyBlock = Builder.GetInsertBlock();
   
   Builder.SetInsertPoint(ContBlock);
   PHINode* PH = Builder.CreatePHI(Type::getInt64Ty(Context), 2, "tmp");

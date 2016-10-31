@@ -162,16 +162,16 @@ static std::unique_ptr<ExprAST> ParseIntExpr() {
 
 static std::unique_ptr<ExprAST> ParseIdentifierExpr() {
   if (Lexeme.at(0) == 'a') {
-    assert(Lexeme.size() == 2);
+    if (Lexeme.size() != 2) return nullptr;
     int n = Lexeme.at(1) - '0';
-    assert(n >= 0 && n <= 5);
+    if (n < 0 || n > 5) return nullptr;
     getNextToken();
     return std::make_unique<ArgExprAST>(n);
   }
   if (Lexeme.at(0) == 'm') {
-    assert(Lexeme.size() == 2);
+    if (Lexeme.size() != 2) return nullptr;
     int n = Lexeme.at(1) - '0';
-    assert(n >= 0 && n <= 9);
+    if (n < 0 || n > 9) return nullptr;
     std::string var = Lexeme;
     getNextToken();
     return std::make_unique<MutableVarExprAST>(var);
@@ -224,7 +224,7 @@ static std::unique_ptr<ExprAST> ParseSExpr() {
     if (lhs && rhs)
       return std::make_unique<BinaryOpExprAST>(thisOp, std::move(lhs), std::move(rhs));
   }
-
+  
   return LogError("can not recognize s-exp");
 }
 
