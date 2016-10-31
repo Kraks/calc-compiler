@@ -201,7 +201,7 @@ static int compile() {
 
     Value* RetVal = e->codegen();
     Builder.CreateRet(RetVal);
-    //assert(!verifyModule(*M, &outs()));
+    assert(!verifyModule(*M, &outs()));
     M->dump();
     return 0;
   }
