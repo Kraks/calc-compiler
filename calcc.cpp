@@ -141,10 +141,12 @@ Value* WhileExprAST::codegen() {
   BasicBlock* ContBlock = BasicBlock::Create(Context, "cont", TheFunction);
 
   Value* CndValue = cnd->codegen();
+  if (!CndValue) return LogErrorV("Can not generate code for cond part");
   Builder.CreateCondBr(CndValue, BodyBlock, ContBlock);
   
   Builder.SetInsertPoint(BodyBlock);
   Value* BodyValue = body->codegen();
+  if (!BodyValue) return LogErrorV("Can not generate code for body part");
   CndValue = cnd->codegen();
   Builder.CreateCondBr(CndValue, BodyBlock, ContBlock);
   BodyBlock = Builder.GetInsertBlock();
