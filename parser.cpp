@@ -13,9 +13,10 @@
 static std::unique_ptr<ExprAST> ParseBoolExpr();
 static std::unique_ptr<ExprAST> ParseIntExpr();
 static std::unique_ptr<ExprAST> ParseIdentifierExpr();
-static std::unique_ptr<ExprAST> ParseSExpr();
+static std::unique_ptr<ExprAST> ParseSExpr(long long pos);
 static std::unique_ptr<ExprAST> ParseExpression();
 
+static long long pos = 0;
 static int64_t NumVal; 
 static int CurTok;
 static bool BoolVal;
@@ -42,40 +43,46 @@ static bool isComment(char c) {
   return c == '#' || c == '.' || c == '$' || c == '^';
 }
 
+static char getchar_with_pos() {
+  static char c = getchar();
+  pos += 1;
+  return c;
+}
+
 static int gettok() {
-  static int LastChar = getchar();
+  static int LastChar = getchar_with_pos();
 
   if (isComment(LastChar)) {
 HandleComment:
-    do LastChar = getchar();
+    do LastChar = getchar_with_pos();
     while (LastChar != EOF && LastChar != '\n' && LastChar != '\r');
     if (LastChar != EOF) return gettok();
   }
   
   while (isspace(LastChar)) {
     if (LastChar == '\n' || LastChar == '\r') {
-      LastChar = getchar();
+      LastChar = getchar_with_pos();
       if (isComment(LastChar)) goto HandleComment;
     } else {
-      LastChar = getchar();
+      LastChar = getchar_with_pos();
     }
   }
 
   if (LastChar == '('){
     Lexeme = LastChar;
-    LastChar = getchar();
+    LastChar = getchar_with_pos();
     return LPAREN;
   } 
 
   if (LastChar == ')') {
     Lexeme = LastChar;
-    LastChar = getchar();
+    LastChar = getchar_with_pos();
     return RPAREN;
   }
 
   if (isalpha(LastChar)) {
     Lexeme = LastChar;
-    while (isalnum(LastChar = getchar()))
+    while (isalnum(LastChar = getchar_with_pos()))
       Lexeme += LastChar;
 
     if (Lexeme == "if") return IF;
@@ -96,7 +103,7 @@ HandleComment:
 HandleInt:
     do {
       Lexeme += LastChar;
-      LastChar = getchar();
+      LastChar = getchar_with_pos();
     } while (isdigit(LastChar));
     unsigned int bits = APInt::getBitsNeeded(llvm::StringRef(Lexeme), 10);
     if (Lexeme.at(0) == '-') {
@@ -111,7 +118,7 @@ HandleInt:
   // Maybe negative number or minus operator
   if (LastChar == '-') {
     Lexeme = LastChar;
-    LastChar = getchar();
+    LastChar = getchar_with_pos();
     if (isdigit(LastChar)) goto HandleInt;
     Op = GetOpType(Lexeme);
     return OP;
@@ -120,7 +127,7 @@ HandleInt:
   // Other operators
   if (isgraph(LastChar)) {
     Lexeme = LastChar;
-    while (isgraph(LastChar = getchar()))
+    while (isgraph(LastChar = getchar_with_pos()))
       Lexeme += LastChar;
     if ((Op = GetOpType(Lexeme)) != unknown) 
       return OP;
@@ -131,7 +138,7 @@ HandleInt:
     return END;
 
   int ThisChar = LastChar;
-  LastChar = getchar();
+  LastChar = getchar_with_pos();
   return ThisChar;
 }
 
@@ -181,8 +188,9 @@ static std::unique_ptr<ExprAST> ParseIdentifierExpr() {
   }
 }
 
-static std::unique_ptr<ExprAST> ParseSExpr() {
+static std::unique_ptr<ExprAST> ParseSExpr(long long pos) {
   //printf("ParseSExpr CurTok: %d\n", CurTok);
+  fprintf(stderr, "current position: %ld\n", pos);
   if (CurTok == IF) {
     getNextToken(); //eat 'if'
     auto cnd = ParseExpression();
@@ -234,9 +242,10 @@ static std::unique_ptr<ExprAST> ParseExpression() {
     //printf("ParseExpr CurTok: %d\n", CurTok);
     switch (CurTok) {
       case LPAREN:
+        long long cur_pos = pos;
         stack.push_back('(');
         getNextToken();
-        LastSExp = ParseSExpr();
+        LastSExp = ParseSExpr(cur_pos);
         if (LastSExp) break;
         return nullptr;
       case RPAREN:
@@ -245,9 +254,8 @@ static std::unique_ptr<ExprAST> ParseExpression() {
           getNextToken();
           return std::move(LastSExp);
         }
-        else {
+        else
           return LogError("Parenthesis not match");
-        }
       case BOOL:
         return ParseBoolExpr();
       case INT:
@@ -265,7 +273,7 @@ std::unique_ptr<ExprAST> Parse() {
   getNextToken();
   auto E = ParseExpression();
   if (E) {
-    while (isspace(LastChar)) LastChar = getchar();
+    while (isspace(LastChar)) LastChar = getchar_with_pos();
     if (CurTok != END) { return LogError("syntax error"); }
     return E;
   }
