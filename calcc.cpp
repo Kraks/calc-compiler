@@ -214,7 +214,7 @@ static int compile() {
 
 int main(int argc, char** argv) { 
   if (argc == 2) {
-    if (strncmp("-check", argv[1], 6)) {
+    if (strncmp("-check", argv[1], 6) == 0) {
       check_of = true;
     }
     else {

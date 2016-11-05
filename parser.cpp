@@ -190,7 +190,7 @@ static std::unique_ptr<ExprAST> ParseIdentifierExpr() {
 
 static std::unique_ptr<ExprAST> ParseSExpr(long long pos) {
   //printf("ParseSExpr CurTok: %d\n", CurTok);
-  fprintf(stderr, "current position: %ld\n", pos);
+  fprintf(stderr, "current position: %lld\n", pos);
   if (CurTok == IF) {
     getNextToken(); //eat 'if'
     auto cnd = ParseExpression();
@@ -240,9 +240,9 @@ static std::unique_ptr<ExprAST> ParseExpression() {
   static std::unique_ptr<ExprAST> LastSExp = nullptr;
   while (CurTok != END) {
     //printf("ParseExpr CurTok: %d\n", CurTok);
+    long long cur_pos = pos;
     switch (CurTok) {
       case LPAREN:
-        long long cur_pos = pos;
         stack.push_back('(');
         getNextToken();
         LastSExp = ParseSExpr(cur_pos);
