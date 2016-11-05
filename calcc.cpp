@@ -16,6 +16,8 @@
 using namespace llvm;
 using namespace std;
 
+static bool check_of = false;
+
 static LLVMContext Context;
 static IRBuilder<NoFolder> Builder(Context);
 static std::unique_ptr<Module> M = llvm::make_unique<Module>("calc", Context);
@@ -210,4 +212,15 @@ static int compile() {
   return 1;
 }
 
-int main(void) { return compile(); }
+int main(int argc, char** argv) { 
+  if (argc == 2) {
+    if (strncmp("-check", argv[1], 6)) {
+      check_of = true;
+    }
+    else {
+      fprintf(stderr, "unknown option %s\n", argv[1]);
+      return 1;
+    }
+  }
+  return compile(); 
+}
