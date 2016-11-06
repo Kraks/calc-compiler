@@ -13,12 +13,14 @@
 static std::unique_ptr<ExprAST> ParseBoolExpr();
 static std::unique_ptr<ExprAST> ParseIntExpr();
 static std::unique_ptr<ExprAST> ParseIdentifierExpr();
-static std::unique_ptr<ExprAST> ParseSExpr(long long pos);
+static std::unique_ptr<ExprAST> ParseSExpr();
 static std::unique_ptr<ExprAST> ParseExpression();
 
 static long long pos = 0;
-static int64_t NumVal; 
+static long long CurPos = pos;
 static int CurTok;
+
+static int64_t NumVal; 
 static bool BoolVal;
 static std::string Lexeme;
 static OpType Op;
@@ -44,7 +46,7 @@ static bool isComment(char c) {
 }
 
 static char getchar_with_pos() {
-  static char c = getchar();
+  char c = getchar();
   pos += 1;
   return c;
 }
@@ -70,18 +72,21 @@ HandleComment:
 
   if (LastChar == '('){
     Lexeme = LastChar;
+    CurPos = pos;
     LastChar = getchar_with_pos();
     return LPAREN;
   } 
 
   if (LastChar == ')') {
     Lexeme = LastChar;
+    CurPos = pos;
     LastChar = getchar_with_pos();
     return RPAREN;
   }
 
   if (isalpha(LastChar)) {
     Lexeme = LastChar;
+    CurPos = pos;
     while (isalnum(LastChar = getchar_with_pos()))
       Lexeme += LastChar;
 
@@ -100,6 +105,7 @@ HandleComment:
   // Integer
   if (isdigit(LastChar)) {
     Lexeme.clear();
+    CurPos = pos;
 HandleInt:
     do {
       Lexeme += LastChar;
@@ -118,6 +124,7 @@ HandleInt:
   // Maybe negative number or minus operator
   if (LastChar == '-') {
     Lexeme = LastChar;
+    CurPos = pos;
     LastChar = getchar_with_pos();
     if (isdigit(LastChar)) goto HandleInt;
     Op = GetOpType(Lexeme);
@@ -127,6 +134,7 @@ HandleInt:
   // Other operators
   if (isgraph(LastChar)) {
     Lexeme = LastChar;
+    CurPos = pos;
     while (isgraph(LastChar = getchar_with_pos()))
       Lexeme += LastChar;
     if ((Op = GetOpType(Lexeme)) != unknown) 
@@ -156,13 +164,13 @@ std::unique_ptr<ExprAST> LogError(const char* msg) {
 static std::vector<char> stack;
 
 static std::unique_ptr<ExprAST> ParseBoolExpr() {
-  auto B = std::make_unique<BoolExprAST>(BoolVal);
+  auto B = std::make_unique<BoolExprAST>(CurPos, BoolVal);
   getNextToken();
   return std::move(B);
 }
 
 static std::unique_ptr<ExprAST> ParseIntExpr() {
-  auto I = std::make_unique<IntExprAST>(NumVal);
+  auto I = std::make_unique<IntExprAST>(CurPos, NumVal);
   getNextToken();
   return std::move(I);
 }
@@ -173,7 +181,7 @@ static std::unique_ptr<ExprAST> ParseIdentifierExpr() {
     int n = Lexeme.at(1) - '0';
     if (n < 0 || n > 5) return nullptr;
     getNextToken();
-    return std::make_unique<ArgExprAST>(n);
+    return std::make_unique<ArgExprAST>(CurPos, n);
   }
   if (Lexeme.at(0) == 'm') {
     if (Lexeme.size() != 2) return nullptr;
@@ -181,23 +189,23 @@ static std::unique_ptr<ExprAST> ParseIdentifierExpr() {
     if (n < 0 || n > 9) return nullptr;
     std::string var = Lexeme;
     getNextToken();
-    return std::make_unique<MutableVarExprAST>(var);
+    return std::make_unique<MutableVarExprAST>(CurPos, var);
   }
   else {
     return LogError("expected an argument identifier");
   }
 }
 
-static std::unique_ptr<ExprAST> ParseSExpr(long long pos) {
+static std::unique_ptr<ExprAST> ParseSExpr() {
   //printf("ParseSExpr CurTok: %d\n", CurTok);
-  fprintf(stderr, "current position: %lld\n", pos);
+  //fprintf(stderr, "current position: %lld\n", CurPos);
   if (CurTok == IF) {
     getNextToken(); //eat 'if'
     auto cnd = ParseExpression();
     auto thn = ParseExpression();
     auto els = ParseExpression();
     if (cnd && thn && els)
-      return std::make_unique<IfExprAST>(std::move(cnd), std::move(thn), std::move(els));
+      return std::make_unique<IfExprAST>(CurPos, std::move(cnd), std::move(thn), std::move(els));
   }
 
   if (CurTok == SEQ) {
@@ -205,7 +213,7 @@ static std::unique_ptr<ExprAST> ParseSExpr(long long pos) {
     auto fst = ParseExpression();
     auto snd = ParseExpression();
     if (fst && snd)
-      return std::make_unique<SeqExprAST>(std::move(fst), std::move(snd)); 
+      return std::make_unique<SeqExprAST>(CurPos, std::move(fst), std::move(snd)); 
   }
 
   if (CurTok == SET) {
@@ -213,7 +221,7 @@ static std::unique_ptr<ExprAST> ParseSExpr(long long pos) {
     auto val = ParseExpression();
     auto var = ParseExpression();
     if (val && var)
-      return std::make_unique<SetExprAST>(std::move(val), std::move(var));
+      return std::make_unique<SetExprAST>(CurPos, std::move(val), std::move(var));
   }
 
   if (CurTok == WHILE) {
@@ -221,7 +229,7 @@ static std::unique_ptr<ExprAST> ParseSExpr(long long pos) {
     auto cnd = ParseExpression();
     auto body = ParseExpression();
     if (cnd && body)
-      return std::make_unique<WhileExprAST>(std::move(cnd), std::move(body));
+      return std::make_unique<WhileExprAST>(CurPos, std::move(cnd), std::move(body));
   }
 
   if (CurTok == OP) {
@@ -230,7 +238,7 @@ static std::unique_ptr<ExprAST> ParseSExpr(long long pos) {
     auto lhs = ParseExpression();
     auto rhs = ParseExpression();
     if (lhs && rhs)
-      return std::make_unique<BinaryOpExprAST>(thisOp, std::move(lhs), std::move(rhs));
+      return std::make_unique<BinaryOpExprAST>(CurPos, thisOp, std::move(lhs), std::move(rhs));
   }
   
   return LogError("can not recognize s-exp");
@@ -240,12 +248,11 @@ static std::unique_ptr<ExprAST> ParseExpression() {
   static std::unique_ptr<ExprAST> LastSExp = nullptr;
   while (CurTok != END) {
     //printf("ParseExpr CurTok: %d\n", CurTok);
-    long long cur_pos = pos;
     switch (CurTok) {
       case LPAREN:
         stack.push_back('(');
         getNextToken();
-        LastSExp = ParseSExpr(cur_pos);
+        LastSExp = ParseSExpr();
         if (LastSExp) break;
         return nullptr;
       case RPAREN:
