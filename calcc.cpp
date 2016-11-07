@@ -48,21 +48,40 @@ Value* IntExprAST::codegen() {
   return ConstantInt::get(Context, APInt(64, val, /*isSigned=*/true));
 }
 
-static Value* BinaryOpWithOverflow(OpType op, std::vector<Value*> args) {
-  Function* fun;
-  Value *result, *fst, *snd;
+static Value* GenerateOpOverflow(Function* OpFun, std::vector<Value*> args, int pos) {
+  BasicBlock* EntryBlock = Builder.GetInsertBlock();
+  Function* TheFunction = EntryBlock->getParent();
+  BasicBlock* OFBlock = BasicBlock::Create(Context, "of", TheFunction);
+  BasicBlock* NormalBlock = BasicBlock::Create(Context, "normal", TheFunction);
+
+  Value* result = Builder.CreateCall(OpFun, args, "result");
+  Value* fst = Builder.CreateExtractValue(result, {0}, "fst");
+  Value* snd = Builder.CreateExtractValue(result, {1}, "snd");
+  Builder.CreateCondBr(snd, OFBlock, NormalBlock);
+
+  Builder.SetInsertPoint(OFBlock);
+  FunctionType *OVFT = FunctionType::get(Type::getVoidTy(Context), Type::getInt32Ty(Context), false);
+  Function* OVHandler = Function::Create(OVFT, Function::ExternalLinkage, "overflow_fail", &*M);
+  std::vector<Value*> posArg = {ConstantInt::get(Context, APInt(32, pos, true))};
+  Builder.CreateCall(OVHandler, posArg);
+  Builder.CreateBr(NormalBlock);
+
+  Builder.SetInsertPoint(NormalBlock);
+  PHINode* PH = Builder.CreatePHI(Type::getInt64Ty(Context), 2, "add");
+  PH->addIncoming(fst, OFBlock);
+  PH->addIncoming(fst, EntryBlock);
+  return PH;
+}
+
+static Value* BinaryOpWithOverflow(OpType op, std::vector<Value*> args, int pos) {
   const std::vector<Type*> Int64V = {Type::getInt64Ty(Context)};
+  Function* OpFun;
 
   switch (op) {
     case add:
       if (check_of) {
-        fun = Intrinsic::getDeclaration(&*M, Intrinsic::sadd_with_overflow, Int64V);
-        result = Builder.CreateCall(fun, args, "result");
-        fst = Builder.CreateExtractValue(result, {0}, "fst");
-        snd = Builder.CreateExtractValue(result, {1}, "snd");
-        //TODO
-        // if snd is 1, branch to overflow_fail() function
-        return fst;
+        OpFun = Intrinsic::getDeclaration(&*M, Intrinsic::sadd_with_overflow, Int64V);
+        return GenerateOpOverflow(OpFun, args, pos);
       }
       return Builder.CreateAdd(args.at(0), args.at(1), "add");
     case sub:
@@ -83,7 +102,7 @@ Value* BinaryOpExprAST::codegen() {
 
   switch (op) {
     case add: case sub: case mult: case division:
-      return BinaryOpWithOverflow(op, {L, R});
+      return BinaryOpWithOverflow(op, {L, R}, getPos());
     case mod:
       return Builder.CreateSRem(L, R, "srem");
     case gt:
