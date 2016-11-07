@@ -48,6 +48,9 @@ Value* IntExprAST::codegen() {
   return ConstantInt::get(Context, APInt(64, val, /*isSigned=*/true));
 }
 
+static FunctionType *OVFT = FunctionType::get(Type::getVoidTy(Context), Type::getInt32Ty(Context), false);
+static Function* OVHandler = Function::Create(OVFT, Function::ExternalLinkage, "overflow_fail", &*M);
+
 static Value* GenerateOpOverflow(Function* OpFun, std::vector<Value*> args, int pos) {
   BasicBlock* EntryBlock = Builder.GetInsertBlock();
   Function* TheFunction = EntryBlock->getParent();
@@ -60,11 +63,10 @@ static Value* GenerateOpOverflow(Function* OpFun, std::vector<Value*> args, int 
   Builder.CreateCondBr(snd, OFBlock, NormalBlock);
 
   Builder.SetInsertPoint(OFBlock);
-  FunctionType *OVFT = FunctionType::get(Type::getVoidTy(Context), Type::getInt32Ty(Context), false);
-  Function* OVHandler = Function::Create(OVFT, Function::ExternalLinkage, "overflow_fail", &*M);
   std::vector<Value*> posArg = {ConstantInt::get(Context, APInt(32, pos, true))};
   Builder.CreateCall(OVHandler, posArg);
   Builder.CreateBr(NormalBlock);
+  OFBlock = Builder.GetInsertBlock();
 
   Builder.SetInsertPoint(NormalBlock);
   PHINode* PH = Builder.CreatePHI(Type::getInt64Ty(Context), 2, "add");
@@ -97,6 +99,7 @@ static Value* BinaryOpWithOverflow(OpType op, std::vector<Value*> args, int pos)
       }
       return Builder.CreateMul(args.at(0), args.at(1), "mul");
     case division:
+      //TODO trap
       return Builder.CreateSDiv(args.at(0), args.at(1), "sdiv");
     default:
       return LogErrorV("not applicable to overflow check");
@@ -112,6 +115,7 @@ Value* BinaryOpExprAST::codegen() {
     case add: case sub: case mult: case division:
       return BinaryOpWithOverflow(op, {L, R}, getPos());
     case mod:
+      //TODO trap
       return Builder.CreateSRem(L, R, "srem");
     case gt:
       return Builder.CreateICmpSGT(L, R, "gt");
