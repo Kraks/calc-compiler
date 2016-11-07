@@ -48,10 +48,10 @@ Value* IntExprAST::codegen() {
   return ConstantInt::get(Context, APInt(64, val, /*isSigned=*/true));
 }
 
-Value* BinaryOpWithOverflow(OpType op, std::vector<Value*> args) {
+static Value* BinaryOpWithOverflow(OpType op, std::vector<Value*> args) {
   Function* fun;
   Value *result, *fst, *snd;
-  std::vector<Type*> Int64V = {Type::getInt64Ty(Context)};
+  const std::vector<Type*> Int64V = {Type::getInt64Ty(Context)};
 
   switch (op) {
     case add:
@@ -61,6 +61,7 @@ Value* BinaryOpWithOverflow(OpType op, std::vector<Value*> args) {
         fst = Builder.CreateExtractValue(result, {0}, "fst");
         snd = Builder.CreateExtractValue(result, {1}, "snd");
         //TODO
+        // if snd is 1, branch to overflow_fail() function
         return fst;
       }
       return Builder.CreateAdd(args.at(0), args.at(1), "add");
