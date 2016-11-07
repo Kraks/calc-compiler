@@ -55,15 +55,21 @@ Value* BinaryOpWithOverflow(OpType op, std::vector<Value*> args) {
 
   switch (op) {
     case add:
-      fun = Intrinsic::getDeclaration(&*M, Intrinsic::sadd_with_overflow, Int64V);
-      result = Builder.CreateCall(fun, args, "result");
-      fst = Builder.CreateExtractValue(result, {0}, "fst");
-      snd = Builder.CreateExtractValue(result, {1}, "snd");
-      //TODO
-      return fst;
+      if (check_of) {
+        fun = Intrinsic::getDeclaration(&*M, Intrinsic::sadd_with_overflow, Int64V);
+        result = Builder.CreateCall(fun, args, "result");
+        fst = Builder.CreateExtractValue(result, {0}, "fst");
+        snd = Builder.CreateExtractValue(result, {1}, "snd");
+        //TODO
+        return fst;
+      }
+      return Builder.CreateAdd(args.at(0), args.at(1), "add");
     case sub:
+      return Builder.CreateSub(args.at(0), args.at(1), "sub");
     case mult:
+      return Builder.CreateMul(args.at(0), args.at(1), "mul");
     case division:
+      return Builder.CreateSDiv(args.at(0), args.at(1), "sdiv");
     default:
       return LogErrorV("not applicable to overflow check");
   }
@@ -75,16 +81,8 @@ Value* BinaryOpExprAST::codegen() {
   if (!L || !R) return nullptr;
 
   switch (op) {
-    case add:
-      if (check_of) 
-        return BinaryOpWithOverflow(op, {L, R});
-      return Builder.CreateAdd(L, R, "add");
-    case sub:
-      return Builder.CreateSub(L, R, "sub");
-    case mult:
-      return Builder.CreateMul(L, R, "mul");
-    case division:
-      return Builder.CreateSDiv(L, R, "sdiv");
+    case add: case sub: case mult: case division:
+      return BinaryOpWithOverflow(op, {L, R});
     case mod:
       return Builder.CreateSRem(L, R, "srem");
     case gt:
@@ -99,7 +97,7 @@ Value* BinaryOpExprAST::codegen() {
       return Builder.CreateICmpEQ(L, R, "eq");
     case neq:
       return Builder.CreateICmpNE(L, R, "neq");
-    case unknown:
+    case unknown: 
     default:
       return LogErrorV("unknown operator");
   }
