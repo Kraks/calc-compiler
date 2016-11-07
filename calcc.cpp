@@ -85,8 +85,16 @@ static Value* BinaryOpWithOverflow(OpType op, std::vector<Value*> args, int pos)
       }
       return Builder.CreateAdd(args.at(0), args.at(1), "add");
     case sub:
+      if (check_of) {
+        OpFun = Intrinsic::getDeclaration(&*M, Intrinsic::ssub_with_overflow, Int64V);
+        return GenerateOpOverflow(OpFun, args, pos);
+      }
       return Builder.CreateSub(args.at(0), args.at(1), "sub");
     case mult:
+      if (check_of) {
+        OpFun = Intrinsic::getDeclaration(&*M, Intrinsic::smul_with_overflow, Int64V);
+        return GenerateOpOverflow(OpFun, args, pos);
+      }
       return Builder.CreateMul(args.at(0), args.at(1), "mul");
     case division:
       return Builder.CreateSDiv(args.at(0), args.at(1), "sdiv");
