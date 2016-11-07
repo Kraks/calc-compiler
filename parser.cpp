@@ -16,8 +16,8 @@ static std::unique_ptr<ExprAST> ParseIdentifierExpr();
 static std::unique_ptr<ExprAST> ParseSExpr();
 static std::unique_ptr<ExprAST> ParseExpression();
 
-static long long pos = 0;
-static long long CurPos = pos;
+static int pos = 0;
+static int CurPos = pos;
 static int CurTok;
 
 static int64_t NumVal; 

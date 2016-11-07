@@ -48,13 +48,36 @@ Value* IntExprAST::codegen() {
   return ConstantInt::get(Context, APInt(64, val, /*isSigned=*/true));
 }
 
+Value* BinaryOpWithOverflow(OpType op, std::vector<Value*> args) {
+  Function* fun;
+  Value *result, *fst, *snd;
+  std::vector<Type*> Int64V = {Type::getInt64Ty(Context)};
+
+  switch (op) {
+    case add:
+      fun = Intrinsic::getDeclaration(&*M, Intrinsic::sadd_with_overflow, Int64V);
+      result = Builder.CreateCall(fun, args, "result");
+      fst = Builder.CreateExtractValue(result, {0}, "fst");
+      snd = Builder.CreateExtractValue(result, {1}, "snd");
+      //TODO
+      return fst;
+    case sub:
+    case mult:
+    case division:
+    default:
+      return LogErrorV("not applicable to overflow check");
+  }
+}
+
 Value* BinaryOpExprAST::codegen() {
   Value* L = lhs->codegen();
   Value* R = rhs->codegen();
   if (!L || !R) return nullptr;
-  
+
   switch (op) {
     case add:
+      if (check_of) 
+        return BinaryOpWithOverflow(op, {L, R});
       return Builder.CreateAdd(L, R, "add");
     case sub:
       return Builder.CreateSub(L, R, "sub");
@@ -162,7 +185,7 @@ Value* WhileExprAST::codegen() {
 
 Value* SetExprAST::codegen() {
   Value* value = val->codegen();
-  MutableVarExprAST* mvar = dynamic_cast<MutableVarExprAST*>(var.get());
+  MutableVarExprAST* mvar = static_cast<MutableVarExprAST*>(var.get());
   AllocaInst* alloca = MutableValues[mvar->getName()];
   if (value && alloca) {
     Builder.CreateStore(value, alloca);
