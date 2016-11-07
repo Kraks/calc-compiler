@@ -13,7 +13,7 @@
 static std::unique_ptr<ExprAST> ParseBoolExpr();
 static std::unique_ptr<ExprAST> ParseIntExpr();
 static std::unique_ptr<ExprAST> ParseIdentifierExpr();
-static std::unique_ptr<ExprAST> ParseSExpr();
+static std::unique_ptr<ExprAST> ParseSExpr(int);
 static std::unique_ptr<ExprAST> ParseExpression();
 
 static int pos = 0;
@@ -196,54 +196,52 @@ static std::unique_ptr<ExprAST> ParseIdentifierExpr() {
   }
 }
 
-static std::unique_ptr<ExprAST> ParseSExpr() {
+static std::unique_ptr<ExprAST> ParseSExpr(int thisPos) {
   //printf("ParseSExpr CurTok: %d\n", CurTok);
-  //fprintf(stderr, "current position: %lld\n", CurPos);
+  // thisPos is the position of left paranthesis
+  //fprintf(stderr, "current position: %d\n", thisPos);
+  getNextToken(); //eat left paranthesis
+  int OpPos = CurPos;
   if (CurTok == IF) {
-    int thisPos = CurPos;
     getNextToken(); //eat 'if'
     auto cnd = ParseExpression();
     auto thn = ParseExpression();
     auto els = ParseExpression();
     if (cnd && thn && els)
-      return std::make_unique<IfExprAST>(thisPos, std::move(cnd), std::move(thn), std::move(els));
+      return std::make_unique<IfExprAST>(OpPos, std::move(cnd), std::move(thn), std::move(els));
   }
 
   if (CurTok == SEQ) {
-    int thisPos = CurPos;
     getNextToken(); //eat 'seq'
     auto fst = ParseExpression();
     auto snd = ParseExpression();
     if (fst && snd)
-      return std::make_unique<SeqExprAST>(thisPos, std::move(fst), std::move(snd)); 
+      return std::make_unique<SeqExprAST>(OpPos, std::move(fst), std::move(snd)); 
   }
 
   if (CurTok == SET) {
-    int thisPos = CurPos;
     getNextToken();
     auto val = ParseExpression();
     auto var = ParseExpression();
     if (val && var)
-      return std::make_unique<SetExprAST>(thisPos, std::move(val), std::move(var));
+      return std::make_unique<SetExprAST>(OpPos, std::move(val), std::move(var));
   }
 
   if (CurTok == WHILE) {
-    int thisPos = CurPos;
     getNextToken(); //eat 'while'
     auto cnd = ParseExpression();
     auto body = ParseExpression();
     if (cnd && body)
-      return std::make_unique<WhileExprAST>(thisPos, std::move(cnd), std::move(body));
+      return std::make_unique<WhileExprAST>(OpPos, std::move(cnd), std::move(body));
   }
 
   if (CurTok == OP) {
     OpType thisOp = Op;
-    int thisPos = CurPos;
     getNextToken(); //eat op
     auto lhs = ParseExpression();
     auto rhs = ParseExpression();
     if (lhs && rhs)
-      return std::make_unique<BinaryOpExprAST>(thisPos, thisOp, std::move(lhs), std::move(rhs));
+      return std::make_unique<BinaryOpExprAST>(OpPos, thisOp, std::move(lhs), std::move(rhs));
   }
   
   return LogError("can not recognize s-exp");
@@ -256,8 +254,7 @@ static std::unique_ptr<ExprAST> ParseExpression() {
     switch (CurTok) {
       case LPAREN:
         stack.push_back('(');
-        getNextToken();
-        LastSExp = ParseSExpr();
+        LastSExp = ParseSExpr(CurPos);
         if (LastSExp) break;
         return nullptr;
       case RPAREN:
