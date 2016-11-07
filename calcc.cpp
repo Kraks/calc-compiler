@@ -98,9 +98,6 @@ static Value* BinaryOpWithOverflow(OpType op, std::vector<Value*> args, int pos)
         return GenerateOpOverflow(OpFun, args, pos);
       }
       return Builder.CreateMul(args.at(0), args.at(1), "mul");
-    case division:
-      //TODO trap
-      return Builder.CreateSDiv(args.at(0), args.at(1), "sdiv");
     default:
       return LogErrorV("not applicable to overflow check");
   }
@@ -112,10 +109,12 @@ Value* BinaryOpExprAST::codegen() {
   if (!L || !R) return nullptr;
 
   switch (op) {
-    case add: case sub: case mult: case division:
+    case add: case sub: case mult: 
       return BinaryOpWithOverflow(op, {L, R}, getPos());
-    case mod:
+    case division:
       //TODO trap
+      return Builder.CreateSDiv(L, R, "sdiv");
+    case mod:
       return Builder.CreateSRem(L, R, "srem");
     case gt:
       return Builder.CreateICmpSGT(L, R, "gt");
