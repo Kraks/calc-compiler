@@ -13,10 +13,10 @@
 static std::unique_ptr<ExprAST> ParseBoolExpr();
 static std::unique_ptr<ExprAST> ParseIntExpr();
 static std::unique_ptr<ExprAST> ParseIdentifierExpr();
-static std::unique_ptr<ExprAST> ParseSExpr(int);
+static std::unique_ptr<ExprAST> ParseSExpr();
 static std::unique_ptr<ExprAST> ParseExpression();
 
-static int pos = 0;
+static int pos = -1;
 static int CurPos = pos;
 static int CurTok;
 
@@ -196,10 +196,11 @@ static std::unique_ptr<ExprAST> ParseIdentifierExpr() {
   }
 }
 
-static std::unique_ptr<ExprAST> ParseSExpr(int thisPos) {
+static std::unique_ptr<ExprAST> ParseSExpr() {
   //printf("ParseSExpr CurTok: %d\n", CurTok);
   // thisPos is the position of left paranthesis
   //fprintf(stderr, "current position: %d\n", thisPos);
+  int LPPos = CurPos;
   getNextToken(); //eat left paranthesis
   int OpPos = CurPos;
   if (CurTok == IF) {
@@ -254,7 +255,7 @@ static std::unique_ptr<ExprAST> ParseExpression() {
     switch (CurTok) {
       case LPAREN:
         stack.push_back('(');
-        LastSExp = ParseSExpr(CurPos);
+        LastSExp = ParseSExpr();
         if (LastSExp) break;
         return nullptr;
       case RPAREN:
