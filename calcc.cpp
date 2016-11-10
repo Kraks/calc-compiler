@@ -112,7 +112,6 @@ Value* BinaryOpExprAST::codegen() {
     case add: case sub: case mult: 
       return BinaryOpWithOverflow(op, {L, R}, getPos());
     case division:
-      //TODO trap
       return Builder.CreateSDiv(L, R, "sdiv");
     case mod:
       return Builder.CreateSRem(L, R, "srem");
