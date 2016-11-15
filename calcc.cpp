@@ -197,6 +197,7 @@ Value* WhileExprAST::codegen() {
   Value* CndValue = cnd->codegen();
   if (!CndValue) return LogErrorV("Can not generate code for cond part");
   Builder.CreateCondBr(CndValue, BodyBlock, ContBlock);
+  EntryBlock = Builder.GetInsertBlock();
   
   Builder.SetInsertPoint(BodyBlock);
   Value* BodyValue = body->codegen();
