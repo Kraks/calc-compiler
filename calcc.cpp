@@ -24,6 +24,9 @@ static std::unique_ptr<Module> M = llvm::make_unique<Module>("calc", Context);
 static std::map<int, Value*> ArgumentValues;
 static std::map<std::string, AllocaInst*> MutableValues;
 
+static FunctionType *OVFT = FunctionType::get(Type::getVoidTy(Context), Type::getInt32Ty(Context), false);
+static Function* OVHandler = Function::Create(OVFT, Function::ExternalLinkage, "overflow_fail", &*M);
+
 Value* LogErrorV(const char* msg) {
   LogError(msg);
   return nullptr;
@@ -48,12 +51,10 @@ Value* IntExprAST::codegen() {
   return ConstantInt::get(Context, APInt(64, val, /*isSigned=*/true));
 }
 
-static FunctionType *OVFT = FunctionType::get(Type::getVoidTy(Context), Type::getInt32Ty(Context), false);
-static Function* OVHandler = Function::Create(OVFT, Function::ExternalLinkage, "overflow_fail", &*M);
-
 static Value* GenerateOpOverflow(Function* OpFun, std::vector<Value*> args, int pos) {
   BasicBlock* EntryBlock = Builder.GetInsertBlock();
   Function* TheFunction = EntryBlock->getParent();
+
   BasicBlock* OFBlock = BasicBlock::Create(Context, "of", TheFunction);
   BasicBlock* NormalBlock = BasicBlock::Create(Context, "normal", TheFunction);
 
