@@ -68,12 +68,10 @@ static Value* GenerateOpOverflow(Function* OpFun, std::vector<Value*> args, int 
   Builder.CreateCall(OVHandler, posArg);
   Builder.CreateBr(NormalBlock);
   OFBlock = Builder.GetInsertBlock();
-
+  
+  
   Builder.SetInsertPoint(NormalBlock);
-  PHINode* PH = Builder.CreatePHI(Type::getInt64Ty(Context), 2, "add");
-  PH->addIncoming(fst, OFBlock);
-  PH->addIncoming(fst, EntryBlock);
-  return PH;
+  return fst;
 }
 
 static Value* BinaryOpWithOverflow(OpType op, std::vector<Value*> args, int pos) {
